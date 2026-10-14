@@ -277,6 +277,15 @@ grep -rn "} catch" src/ --include="*.sol" -A5 | grep -B1 "revert\|IncompatibleAd
 # Nullifier timing (Worldcoin-style)
 grep -rn "nullifiers\[.*\] = true\|nullifierUsed\[" src/ --include="*.sol" -B5
 # Marked before action = frontrun can permanently DoS identity
+
+# EIP-7702: "caller is an EOA" checks (see web3-bug-classes, EVM UPGRADE ASSUMPTIONS)
+grep -rn "tx\.origin *== *msg\.sender\|msg\.sender *== *tx\.origin" src/ --include="*.sol"
+grep -rn "\.code\.length\|extcodesize\|isContract(" src/ --include="*.sol"
+# Delegated EOAs pass origin checks inside one batched tx, and have code (can re-enter on receive)
+
+# EIP-1153: transient storage + 2300-gas stipend
+grep -rn "tstore\|tload\| transient " src/ --include="*.sol"
+# TSTORE fits under the transfer()/send() stipend; transient values persist across calls in one tx
 ```
 
 ---

@@ -178,7 +178,7 @@ ACCESS CONTROL GAPS
 
 UNSAFE UPGRADES
 - Storage slot collision between proxy and implementation
-- Uninitialized implementation contract (selfdestruct vector)
+- Uninitialized implementation contract (takeover vector; the selfdestruct variant only bricks a proxy on a pre-Cancun chain, EIP-6780)
 - delegatecall to address from storage (attacker controls target)
 
 SIGNATURE REPLAY
@@ -384,7 +384,7 @@ Every contract has 2^256 storage slots
 DELEGATECALL  — executes code in caller's context (storage collision risk)
 STATICCALL    — cannot modify state (no writes, no events)
 CREATE2       — deterministic address (front-running, same-address malice)
-SELFDESTRUCT  — force-feeds ETH (breaks balance assumptions)
+SELFDESTRUCT  — force-feeds ETH (breaks balance assumptions); post-Cancun deletes code only if created in the same tx
 TSTORE/TLOAD  — transient storage (post-Cancun, cleared each tx)
 ```
 

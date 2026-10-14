@@ -1082,7 +1082,7 @@ grep -rn "slot\|__gap\|ERC1967Storage" contracts/
 □ If new version: are variables only added at the END of storage?
 □ Is there a __gap reserved for future variables?
 □ Is DOMAIN_SEPARATOR recalculated or hardcoded? (hardcoded breaks on upgrade)
-□ Are there any selfdestruct calls? (can brick proxy permanently)
+□ Are there any selfdestruct calls? (brick the proxy only on a pre-Cancun chain; see EIP-6780 below)
 ```
 
 ### Kill Signals
@@ -1097,6 +1097,90 @@ grep -rn "slot\|__gap\|ERC1967Storage" contracts/
 |----------|--------|-----|
 | Wormhole | $10M | Uninitialized UUPS proxy → anyone calls initialize() |
 | Parity | $150M frozen | No access control on initWallet() in library |
+
+---
+
+## EVM UPGRADE ASSUMPTIONS (Cancun 2024, Pectra 2025)
+
+> Three hard forks changed what some old checks mean. Code written before them still makes the old
+> assumptions, and so do older writeups. Check which fork the target chain runs before you rely on
+> any of this, because some L2s and sidechains lag mainnet.
+
+### EIP-7702 (Pectra): an EOA can run contract code
+
+An EOA can delegate its code to an implementation contract. Its address then holds `0xef0100 || impl`
+(23 bytes), and it can batch calls from that code in one transaction.
+
+- `require(msg.sender == tx.origin)` no longer means "no contract logic, no atomic sequence". A
+  delegated EOA calls itself, its code calls the target, and `msg.sender == tx.origin == EOA` holds
+  for every call in the batch. Flash-loan-shaped sequences that the check was meant to stop now pass.
+- `addr.code.length == 0` / `extcodesize == 0` no longer means "this is an EOA". A delegated EOA has
+  code, and its `receive()` / `fallback()` can re-enter, so ETH sent to "a user" is now a callback.
+- `tx.origin`-based allowlists and "only humans" mints are all affected by the same change.
+
+```solidity
+// Verified with forge 1.5.1, evm_version = "prague"
+contract BatchExecutor {
+    struct Call { address to; bytes data; }
+    function execute(Call[] calldata calls) external {
+        require(msg.sender == address(this), "only self");   // the delegated EOA calls itself
+        for (uint256 i; i < calls.length; i++) {
+            (bool ok, bytes memory ret) = calls[i].to.call(calls[i].data);
+            if (!ok) assembly { revert(add(ret, 32), mload(ret)) }
+        }
+    }
+}
+
+function test_originCheckBypass() public {
+    BatchExecutor impl = new BatchExecutor();
+    (address eoa, uint256 pk) = makeAddrAndKey("attacker");
+    vm.signAndAttachDelegation(address(impl), pk);
+    assertEq(eoa.code.length, 23);                    // EOA now has code
+
+    BatchExecutor.Call[] memory calls = new BatchExecutor.Call[](2);
+    calls[0] = BatchExecutor.Call(TARGET, abi.encodeCall(ITarget.step1, ()));  // both guarded by
+    calls[1] = BatchExecutor.Call(TARGET, abi.encodeCall(ITarget.step2, ()));  // msg.sender == tx.origin
+    vm.prank(eoa, eoa);                                // tx.origin == msg.sender == eoa
+    BatchExecutor(eoa).execute(calls);                 // both pass, one tx
+}
+```
+
+### EIP-1153 (Cancun): transient storage
+
+- **The 2300-gas stipend no longer means "the receiver cannot change state".** `SSTORE` still fails
+  under the stipend (EIP-2200 requires more than 2300 gas left), but `TSTORE` costs 100 gas and
+  succeeds. Code that relies on `transfer()` / `send()` as a reentrancy guard can be re-entered
+  into transient state (a lock, a "currently settling" flag, a callback context).
+- Transient storage lives for the whole **transaction**, not the call. A value written in one
+  call of a multicall or a batch is still set in the next call. Look for transient locks or
+  context that are set but not cleared on every exit path, including early returns.
+
+### EIP-6780 (Cancun): SELFDESTRUCT
+
+- `SELFDESTRUCT` deletes code and storage only when the contract was **created in the same
+  transaction**. Otherwise it only sends the ETH. An already-deployed implementation that runs
+  `selfdestruct` (directly or via `delegatecall`) no longer bricks its proxies. The 2017 Parity
+  library freeze could not happen this way on a post-Cancun chain.
+- Force-feeding still works: `selfdestruct(payable(target))` from a contract created in the same
+  transaction still pushes ETH without calling `receive()`. Logic built on `address(this).balance`
+  stays vulnerable.
+- On chains without Cancun, the old behavior still applies.
+
+### Grep Patterns
+
+```bash
+grep -rnE "tx\.origin[[:space:]]*==[[:space:]]*msg\.sender|msg\.sender[[:space:]]*==[[:space:]]*tx\.origin" src/ --include="*.sol"
+grep -rnE "\.code\.length|extcodesize|isContract\(" src/ --include="*.sol"
+grep -rnE "tstore|tload|[[:space:]]transient[[:space:]]" src/ --include="*.sol"
+grep -rnE "\.transfer\(|\.send\(" src/ --include="*.sol"   # stipend-as-guard? check receivers for TSTORE
+grep -rn "selfdestruct" src/ --include="*.sol"              # pre-Cancun chain? same-tx creation?
+```
+
+### Kill Signals
+- Target chain has not activated Pectra (EIP-7702) or Cancun (EIP-1153/6780). Check the chain's
+  hardfork schedule, not mainnet's.
+- The origin/EOA check is only a UX convenience, and nothing of value depends on atomicity.
+- Transient values are cleared on every exit path and are never read across calls.
 
 ---
 
