@@ -1133,4 +1133,4 @@ address constant ETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
 
 ---
 
-→ NEXT: [05-triage-report-examples.md](05-triage-report-examples.md)
+→ NEXT: [web3-triage-report](../web3-triage-report/SKILL.md)

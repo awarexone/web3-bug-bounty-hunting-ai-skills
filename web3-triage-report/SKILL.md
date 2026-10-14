@@ -786,4 +786,4 @@ Almost every bug comes from one of three root causes:
 
 ---
 
-→ NEXT: [06-methodology-research.md](06-methodology-research.md)
+→ NEXT: [web3-methodology-research](../web3-methodology-research/SKILL.md)

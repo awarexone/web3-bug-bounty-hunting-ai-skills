@@ -1,7 +1,6 @@
 ---
 name: web3-ai-tools
-description: AI-powered tools for Web3 bug bounty automation. Use when you want to automate recon, run autonomous audits, or use AI agents for vulnerability discovery.
-Contains: CAI Framework, Shannon AI pentester, LuaN1ao dual-graph agent, SmartGuard multi-agent auditor, AI-generated code hunting patterns, Claude security skills.
+description: "AI-powered tools for Web3 bug bounty automation. Use when you want to automate recon, run autonomous audits, or use AI agents for vulnerability discovery. Contains: CAI Framework, Shannon AI pentester, LuaN1ao dual-graph agent, SmartGuard multi-agent auditor, AI-generated code hunting patterns, Claude security skills."
 ---
 
 # AI TOOLS ARSENAL
@@ -459,4 +458,4 @@ RESULT: Coverage that would take 2 days manually.
 
 ---
 
-→ NEXT: [36-solidity-audit-mcp.md](36-solidity-audit-mcp.md)
+→ NEXT: [web3-solidity-audit-mcp](../web3-solidity-audit-mcp/SKILL.md)

@@ -395,4 +395,4 @@ run_tests(projectRoot: ".", contractName: "ErnVault")
 
 ---
 
-→ NEXT: [00-START-HERE.md](00-START-HERE.md)
+→ NEXT: [web3-start-here](../web3-start-here/SKILL.md)

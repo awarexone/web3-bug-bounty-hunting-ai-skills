@@ -1,7 +1,6 @@
 ---
 name: web3-case-study-role-misconfig
-description: Case study - role misconfiguration bug class applied to a yield aggregator protocol. Use as a template for applying all 10 bug classes to a single target.
-Contains: architecture walkthrough, all bug class verdicts, 2 findings (DISTRIBUTOR_ROLE never granted, dust harvest DoS), complete PoC templates, report drafts, validation steps.
+description: "Case study - role misconfiguration bug class applied to a yield aggregator protocol. Use as a template for applying all 10 bug classes to a single target. Contains: architecture walkthrough, all bug class verdicts, 2 findings (DISTRIBUTOR_ROLE never granted, dust harvest DoS), complete PoC templates, report drafts, validation steps."
 ---
 
 # CASE STUDY: ROLE MISCONFIGURATION IN A YIELD AGGREGATOR
@@ -340,4 +339,4 @@ grep -r "grantRole" ./src/
 
 ---
 
-→ NEXT: [08-ai-tools.md](08-ai-tools.md)
+→ NEXT: [web3-ai-tools](../web3-ai-tools/SKILL.md)

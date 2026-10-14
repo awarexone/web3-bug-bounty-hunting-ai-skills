@@ -12,18 +12,20 @@ description: Master index for the web3 smart contract security knowledge base. U
 ## THE CHAIN (read in this exact order)
 
 ```
-00-START-HERE.md              ← YOU ARE HERE
-01-foundation.md              ← Mindset, target selection, recon setup
-02-bug-classes.md             ← All 10 bug classes with patterns + real examples
-03-grep-arsenal.md            ← Master grep patterns for every class
-04-poc-and-foundry.md         ← Foundry PoC writing, cheatcodes, 18 exploit templates
-05-triage-report-examples.md  ← 7-Question Gate, report format, 20 real paid examples
-06-methodology-research.md    ← ToB, SlowMist, ConsenSys, Immunefi, Cyfrin, Lido, Nethermind
-07-live-hunt-ern.md           ← Completed hunt: Ern protocol (2 findings)
-09-live-hunt-zksync.md        ← Completed hunt: ZKsync Era (0 findings — defense study)
-08-ai-tools.md                ← Shannon, LuaN1ao, SmartGuard, CAI Framework, AI code hunting
-36-solidity-audit-mcp.md      ← MCP server: Slither+Aderyn+SWC in Claude Code
+web3-start-here                 ← YOU ARE HERE
+web3-hunt-foundation            ← Mindset, target selection, recon setup
+web3-bug-classes                ← All 10 bug classes with patterns + real examples
+web3-grep-arsenal               ← Master grep patterns for every class
+web3-poc-foundry                ← Foundry PoC writing, cheatcodes, 18 exploit templates
+web3-triage-report              ← 7-Question Gate, report format, 20 real paid examples
+web3-methodology-research       ← ToB, SlowMist, ConsenSys, Immunefi, Cyfrin, Lido, Nethermind
+web3-case-study-role-misconfig  ← Case study: role misconfiguration bug (2 findings)
+web3-hunt-zksync-era            ← Completed hunt: ZKsync Era (0 findings — defense study)
+web3-ai-tools                   ← Shannon, LuaN1ao, SmartGuard, CAI Framework, AI code hunting
+web3-solidity-audit-mcp         ← MCP server: Slither+Aderyn+SWC in Claude Code
 ```
+
+Each entry is a directory holding one `SKILL.md`.
 
 ---
 
@@ -31,9 +33,9 @@ description: Master index for the web3 smart contract security knowledge base. U
 
 1. Read one file fully — every section
 2. At the bottom: follow → NEXT
-3. **After file 05**: you can hunt independently
-4. **Files 06-08**: advanced tools + active work
-5. **File 36**: MCP integration for live scanning
+3. **After `web3-triage-report`**: you can hunt independently
+4. **`web3-methodology-research` through `web3-ai-tools`**: advanced tools + active work
+5. **`web3-solidity-audit-mcp`**: MCP integration for live scanning
 
 ---
 
@@ -60,4 +62,4 @@ This single rule explains 19% of all Critical findings.
 
 ---
 
-→ NEXT: [01-foundation.md](01-foundation.md)
+→ NEXT: [web3-hunt-foundation](../web3-hunt-foundation/SKILL.md)

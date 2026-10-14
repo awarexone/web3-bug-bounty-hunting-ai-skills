@@ -1086,7 +1086,7 @@ SC Exploits Minimized:              https://github.com/Cyfrin/sc-exploits-minimi
 
 ## LIDO & NETHERMIND (Key Tools and Patterns)
 
-### Lido Audits Library (34-lido-audits-library.md)
+### Lido Audits Library
 
 **Source:** github.com/lidofinance/audits — 100+ reports, 2020–2026. Protocol TVL: $20B+.
 
@@ -1135,7 +1135,7 @@ grep -rn "function.*external\|function.*public" contracts/ | grep -v "view\|pure
 
 ---
 
-### Nethermind Audit Patterns (35-nethermind-audit-patterns.md)
+### Nethermind Audit Patterns
 
 **Source:** github.com/NethermindEth/PublicAuditReports — 166 audits, 428 total issues.
 Protocols: Vana, Royco, Panoptic V2, Worldcoin (×11), Mellow (×7), ZkLend (×5), Lido ZK Oracle, and 50+ more.
@@ -1210,4 +1210,4 @@ grep -rn "function update.*Id\|function modify.*Id" src/ --include="*.sol"
 
 ---
 
-→ NEXT: [07-live-hunt-ern.md](07-live-hunt-ern.md)
+→ NEXT: [web3-case-study-role-misconfig](../web3-case-study-role-misconfig/SKILL.md)

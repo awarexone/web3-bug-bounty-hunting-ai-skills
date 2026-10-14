@@ -175,4 +175,4 @@ SOFT KILL: If protocol has OZ/ToB/Cyfrin audit on current version AND codebase >
 
 ---
 
-> NEXT: [08-ai-tools.md](08-ai-tools.md)
+> NEXT: [web3-ai-tools](../web3-ai-tools/SKILL.md)

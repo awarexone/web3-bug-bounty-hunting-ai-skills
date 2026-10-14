@@ -26,21 +26,23 @@ Works with: **Claude Code**, **Claude.ai**, **Cursor**, **any AI that reads file
 
 ## Files
 
-| File | Contents |
-|------|----------|
-| [`00-start-here.md`](./00-START-HERE.md) | Index + how to navigate |
-| [`01-foundation.md`](./01-foundation.md) | Hunter mindset, target scoring (10-point scorecard), recon setup |
-| [`02-bug-classes.md`](./02-bug-classes.md) | All 10 bug classes - patterns, Solidity examples, real Immunefi findings |
-| [`03-grep-arsenal.md`](./03-grep-arsenal.md) | Grep/regex patterns for every bug class |
-| [`04-poc-and-foundry.md`](./04-poc-and-foundry.md) | 18 Foundry PoC templates - fill in address, run `forge test` |
-| [`05-triage-report-examples.md`](./05-triage-report-examples.md) | 7-question validation gate, Immunefi report format, 20 paid examples |
-| [`06-methodology-research.md`](./06-methodology-research.md) | Trail of Bits, SlowMist, ConsenSys, Cyfrin, Nethermind methodology |
-| [`07-case-study-role-misconfiguration.md`](./07-case-study-role-misconfiguration.md) | Full hunt walkthrough - role misconfiguration bug, real findings |
-| [`08-ai-tools.md`](./08-ai-tools.md) | Shannon, SmartGuard, CAI Framework, LuaN1ao agent setup |
-| [`09-case-study-hardened-l2-bridge.md`](./09-live-hunt-zksync.md) | Defense study - 25 attack vectors tested on a hardened L2 bridge |
-| [`36-solidity-audit-mcp.md`](./36-solidity-audit-mcp.md) | MCP server - run Slither + Aderyn + SWC inside Claude Code |
+Each skill is a directory with one `SKILL.md`.
 
-Read in order. Each file ends with `→ NEXT`. After file 05 you can hunt on your own.
+| Skill | Contents |
+|------|----------|
+| [`web3-start-here`](./web3-start-here/SKILL.md) | Index + how to navigate |
+| [`web3-hunt-foundation`](./web3-hunt-foundation/SKILL.md) | Hunter mindset, target scoring (10-point scorecard), recon setup |
+| [`web3-bug-classes`](./web3-bug-classes/SKILL.md) | All 10 bug classes - patterns, Solidity examples, real Immunefi findings |
+| [`web3-grep-arsenal`](./web3-grep-arsenal/SKILL.md) | Grep/regex patterns for every bug class |
+| [`web3-poc-foundry`](./web3-poc-foundry/SKILL.md) | 18 Foundry PoC templates - fill in address, run `forge test` |
+| [`web3-triage-report`](./web3-triage-report/SKILL.md) | 7-question validation gate, Immunefi report format, 20 paid examples |
+| [`web3-methodology-research`](./web3-methodology-research/SKILL.md) | Trail of Bits, SlowMist, ConsenSys, Cyfrin, Nethermind methodology |
+| [`web3-case-study-role-misconfig`](./web3-case-study-role-misconfig/SKILL.md) | Full hunt walkthrough - role misconfiguration bug, real findings |
+| [`web3-ai-tools`](./web3-ai-tools/SKILL.md) | Shannon, SmartGuard, CAI Framework, LuaN1ao agent setup |
+| [`web3-hunt-zksync-era`](./web3-hunt-zksync-era/SKILL.md) | Defense study - 25 attack vectors tested on a hardened L2 bridge |
+| [`web3-solidity-audit-mcp`](./web3-solidity-audit-mcp/SKILL.md) | MCP server - run Slither + Aderyn + SWC inside Claude Code |
+
+Read in order. Each skill ends with `→ NEXT`. After `web3-triage-report` you can hunt on your own.
 
 ---
 
@@ -68,14 +70,22 @@ Read in order. Each file ends with `→ NEXT`. After file 05 you can hunt on you
 
 **Option 1 - drop into your existing project:**
 
+Claude Code finds a skill only at `.claude/skills/<skill-name>/SKILL.md`, one level deep. Cloning the
+repo into `.claude/skills/web3` nests every skill one level too deep, so none of them load. Copy the
+skill directories up instead:
+
 ```bash
-git clone https://github.com/Awarexone/web3-bug-bounty-hunting-ai-skills.git .claude/skills/web3
+git clone https://github.com/Awarexone/web3-bug-bounty-hunting-ai-skills.git /tmp/web3-skills
+mkdir -p .claude/skills
+cp -r /tmp/web3-skills/web3-* .claude/skills/
 claude
 ```
 
+Use `~/.claude/skills/` instead of `.claude/skills/` to make them available in every project.
+
 Then in Claude Code:
 ```
-Read all files in .claude/skills/web3/ starting from 00-START-HERE.md
+Start with the web3-start-here skill
 ```
 
 **Option 2 - standalone workspace:**
@@ -88,7 +98,7 @@ claude
 
 **Option 3 - just the essentials:**
 ```
-Read 02-bug-classes.md and 04-poc-and-foundry.md
+Read web3-bug-classes/SKILL.md and web3-poc-foundry/SKILL.md
 ```
 
 ---

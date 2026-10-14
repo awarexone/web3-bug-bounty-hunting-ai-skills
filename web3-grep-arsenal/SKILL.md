@@ -1,7 +1,6 @@
 ---
 name: web3-grep-arsenal
-description: Master grep command arsenal for Web3 smart contract auditing. Use when starting a new protocol scan, before deep code review, or when hunting specific vulnerability classes.
-Contains: 10 grep blocks for all major vuln classes, tier ranking, protocol-specific patterns, 2025 new patterns, copy-paste ready blocks.
+description: "Master grep command arsenal for Web3 smart contract auditing. Use when starting a new protocol scan, before deep code review, or when hunting specific vulnerability classes. Contains: 10 grep blocks for all major vuln classes, tier ranking, protocol-specific patterns, 2025 new patterns, copy-paste ready blocks."
 ---
 
 # GREP ARSENAL — MASTER REFERENCE
@@ -314,4 +313,4 @@ grep -rn "totalDeposited\|totalPrincipal\|_balance\b" src/ --include="*.sol"
 
 ---
 
-→ NEXT: [04-poc-and-foundry.md](04-poc-and-foundry.md)
+→ NEXT: [web3-poc-foundry](../web3-poc-foundry/SKILL.md)

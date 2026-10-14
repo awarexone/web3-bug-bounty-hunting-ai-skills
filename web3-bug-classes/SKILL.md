@@ -1117,4 +1117,4 @@ grep -rn "slot\|__gap\|ERC1967Storage" contracts/
 
 ---
 
-→ NEXT: [03-grep-arsenal.md](03-grep-arsenal.md)
+→ NEXT: [web3-grep-arsenal](../web3-grep-arsenal/SKILL.md)
