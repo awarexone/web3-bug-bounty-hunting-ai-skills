@@ -94,6 +94,12 @@ contract ExploitPoC is Test {
     // EXPLOIT
     // ============================================================
     function testExploit() public {
+        // Step 1: starting capital. deal() BEFORE the baseline is read: dealt
+        // tokens are the attacker's own money, not profit. Reading the baseline
+        // first makes a no-op round trip (deposit 1, withdraw 1) pass the
+        // final assertGt.
+        deal(TOKEN, address(this), 1e6);  // 1 USDC starting capital
+
         uint256 attackerBefore = token.balanceOf(address(this));
         uint256 protocolBefore = token.balanceOf(VULN_CONTRACT);
 
@@ -101,9 +107,6 @@ contract ExploitPoC is Test {
         console.log("Attacker USDC:  ", attackerBefore);
         console.log("Protocol USDC:  ", protocolBefore);
         console.log("--------------------");
-
-        // Step 1: [description]
-        deal(TOKEN, address(this), 1e6);  // 1 USDC starting capital
 
         // Step 2: [description]
         token.approve(VULN_CONTRACT, type(uint256).max);
@@ -227,18 +230,21 @@ vm.selectFork(baseFork);
 ### Snapshot / Revert
 
 ```solidity
-uint256 snapshot = vm.snapshot();
+uint256 snapshotId = vm.snapshotState();
 // Save entire EVM state
 
-vm.revertTo(uint256 snapshotId);
+vm.revertToState(uint256 snapshotId);
 // Restore to saved state
 
 // Pattern: test multiple attack paths from same starting state
-uint256 snap = vm.snapshot();
+uint256 snap = vm.snapshotState();
 // test path A
-vm.revertTo(snap);
+vm.revertToState(snap);
 // test path B
 ```
+
+`vm.snapshot()` / `vm.revertTo()` are the old names. forge-std marks them deprecated in favor of
+`snapshotState` / `revertToState` ("will be removed in future versions").
 
 ### Mocking
 
@@ -885,42 +891,109 @@ grep -rn ">= 0" contracts/ | grep "uint"  # uint always >= 0
 ## FOUNDRY INVARIANT TESTING
 
 ```solidity
-// Invariant tests: Foundry calls random sequences of functions,
-// checks invariants after each sequence
+// Invariant tests: Foundry calls random sequences of handler functions,
+// then checks every invariant_* function after each call.
+// On a fork the vault already has real holders and real assets, so every
+// invariant must be stated relative to the fork-block state, never to zero.
+
+interface IERC20Like {
+    function approve(address, uint256) external returns (bool);
+    function balanceOf(address) external view returns (uint256);
+}
+
+interface IERC4626Like {
+    function asset() external view returns (address);
+    function totalAssets() external view returns (uint256);
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address) external view returns (uint256);
+    function convertToAssets(uint256 shares) external view returns (uint256);
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+}
+
+// The handler gives the fuzzer funded actors and records ghost totals.
+contract VaultHandler is Test {
+    IERC4626Like public immutable vault;
+    IERC20Like public immutable asset;
+    address[] public actors;
+    uint256 public ghostSharesMinted;
+    uint256 public ghostSharesBurned;
+
+    constructor(IERC4626Like _vault, address[] memory _actors) {
+        vault = _vault;
+        asset = IERC20Like(_vault.asset());
+        actors = _actors;
+    }
+
+    function deposit(uint256 actorSeed, uint256 assets) external {
+        address actor = actors[actorSeed % actors.length];
+        uint256 bal = asset.balanceOf(actor);
+        if (bal == 0) return;
+        assets = bound(assets, 1, bal);
+        vm.startPrank(actor);
+        asset.approve(address(vault), assets);
+        ghostSharesMinted += vault.deposit(assets, actor);
+        vm.stopPrank();
+    }
+
+    function redeem(uint256 actorSeed, uint256 shares) external {
+        address actor = actors[actorSeed % actors.length];
+        uint256 bal = vault.balanceOf(actor);
+        if (bal == 0) return;
+        shares = bound(shares, 1, bal);
+        vm.prank(actor);
+        vault.redeem(shares, actor, actor);
+        ghostSharesBurned += shares;
+    }
+}
 
 contract VaultInvariantTest is Test {
-    IVault vault;
-    address[] users;
+    IERC4626Like vault;
+    VaultHandler handler;
+    uint256 supplyAtFork;
 
     function setUp() public {
         vm.createSelectFork(vm.envString("MAINNET_RPC_URL"), 18_000_000);
-        vault = IVault(VAULT_ADDR);
-        for (uint i = 0; i < 3; i++) {
-            users.push(makeAddr(string(abi.encodePacked("user", i))));
+        vault = IERC4626Like(VAULT_ADDR);
+        supplyAtFork = vault.totalSupply();   // real holders' shares, already in supply
+
+        address[] memory actors = new address[](3);
+        for (uint256 i = 0; i < actors.length; i++) {
+            actors[i] = makeAddr(string.concat("user", vm.toString(i)));
+            deal(vault.asset(), actors[i], 1_000_000e6);   // match the asset's decimals
         }
-        targetContract(address(vault));
+        handler = new VaultHandler(vault, actors);
+        targetContract(address(handler));   // fuzz the handler, not the vault
     }
 
-    // Invariant: vault is not underwater
-    function invariant_notInsolvent() public view {
-        assertGe(vault.totalAssets(), vault.totalSupply());
+    // Solvency: redeeming every share never needs more assets than the vault holds.
+    function invariant_solvent() public view {
+        assertLe(vault.convertToAssets(vault.totalSupply()), vault.totalAssets());
     }
 
-    // Invariant: sum of all user balances == totalSupply
-    function invariant_balancesSumToSupply() public view {
-        uint256 sum;
-        for (uint i = 0; i < users.length; i++) {
-            sum += vault.balanceOf(users[i]);
-        }
-        assertEq(sum, vault.totalSupply());
-    }
-
-    // Invariant: no free shares (principal is always 1:1)
-    function invariant_noPhantomShares() public view {
-        assertEq(vault.totalAssets(), vault.totalSupply());
+    // Share accounting: supply moves only by what the handler minted and burned.
+    // A vault that mints fee shares to a treasury on deposit breaks this by design;
+    // add the fee shares to the ghost total for those.
+    function invariant_supplyAccounting() public view {
+        assertEq(
+            vault.totalSupply(),
+            supplyAtFork + handler.ghostSharesMinted() - handler.ghostSharesBurned()
+        );
     }
 }
 ```
+
+Three invariants that look right but are not:
+
+- `sum(balances of your test users) == totalSupply()` on a fork. Real holders' shares are
+  already in `totalSupply()`, so it fails on the first check, before any call runs.
+- `totalAssets() == totalSupply()` ("shares are 1:1"). It fails as soon as the vault accrues
+  yield, and immediately on a vault with a virtual-share offset (OpenZeppelin ERC4626
+  `_decimalsOffset()`). That failure is a false positive, not a finding.
+- `targetContract(address(vault))` with no handler. The fuzzer's random senders hold no
+  assets, so every deposit reverts. With the default `fail_on_revert = false` reverted calls
+  are discarded, and the invariants are checked against an untouched vault: a green run that
+  tested nothing.
 
 ### foundry.toml Configuration
 
@@ -929,15 +1002,15 @@ contract VaultInvariantTest is Test {
 src = "src"
 out = "out"
 libs = ["lib"]
-solc_version = "0.8.20"
+solc_version = "0.8.24"  # cancun needs solc >= 0.8.24; with 0.8.20 forge silently compiles for shanghai
 optimizer = true
 optimizer_runs = 200
 evm_version = "cancun"
 
 [fuzz]
 runs = 256
-seed = 1
-max_global_rejects = 65536
+seed = "0x1"             # must be a hex string; `seed = 1` makes forge reject the whole config
+max_test_rejects = 65536 # vm.assume rejects per test (`max_global_rejects` is not a key; it is ignored)
 
 [invariant]
 runs = 256
@@ -1106,9 +1179,9 @@ address constant ETH_USD_FEED = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
 | `fork RPC error` | Bad or missing RPC URL | Check `.env`, run `source .env` first |
 | `deal() not working` | Token has non-standard storage | Find storage slot manually with `cast storage` |
 | `vm.prank() reverts` | Function checks `tx.origin`, not `msg.sender` | Use `vm.startPrank(user, user)` to set both |
-| `test runs but doesn't use fork` | Missing `--fork-url` flag | Add `--fork-url $MAINNET_RPC_URL` |
+| `test runs but doesn't use fork` | No `vm.createSelectFork(...)` in `setUp()` and no `--fork-url` flag | Fork in `setUp()` (as in the template) or pass `--fork-url $MAINNET_RPC_URL` |
 | `assertGt fails, attacker got 0` | Wrong logic, wrong block, wrong address | Add console.logs at each step to find where it breaks |
-| `Out of gas` | Too many iterations or expensive calls | Add `vm.txGasPrice(0)` and `--gas-limit 50000000` |
+| `Out of gas` | Too many iterations or expensive calls | Raise the limit with `--gas-limit 50000000` (`vm.txGasPrice` sets the gas *price* and does not help) |
 | Trace shows wrong selector | Interface mismatch | Copy ABI from Etherscan/cast abi instead of writing manually |
 | `ERC20: insufficient allowance` | Forgot approve | Add `token.approve(TARGET, type(uint256).max)` |
 
